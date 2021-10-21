@@ -12,26 +12,38 @@ contract FuncoesPodemSerFaceis {
     string placaDoVeiculo = "MON36A8";
     uint renavam = 147258369;
     uint valorDeVenda = 80000000;
-    uint public valorPagoDeEntrada;
-    uint numeroDeParcelas = 7;
+     uint public valorPagoDeEntrada;
+    uint numeroDeParcelas = 12;
     uint valorDeCadaParcela;
     uint valorJaPago;
-    uint saldoDevedor = 70000000;
+    uint saldoDevedor;
     uint multaIncidente = 10;
     uint valorDaMulta;
     
     constructor(
+        
         string memory _nomeDoComprador,
         string memory _cpfDoComprador,
         uint _valorDaEntrada
+        
+        
         ){
             nomeDoComprador = _nomeDoComprador;
             cpfDoComprador = _cpfDoComprador;
             valorPagoDeEntrada = _valorDaEntrada;
+            valorDeCadaParcela = _calculoValordeCadaParcela();
             
-        }
+    }
     
     function _calculoValordeCadaParcela () public view returns(uint){
         
-        return(valorDeVenda - valorPagoDeEntrada) / 12;
+        return(valorDeVenda - valorPagoDeEntrada) / numeroDeParcelas;
     }
+    
+    function _calculaSaldoDevedor(uint _numeroDeParcelasPagas) public view returns(uint, string memory){
+        
+        return ((valorDeVenda - valorPagoDeEntrada) - (valorDeCadaParcela * _numeroDeParcelasPagas) , "O SaldoDevedor eh ");
+        
+    }
+    
+}
