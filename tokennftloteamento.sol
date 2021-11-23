@@ -1,136 +1,105 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity 0.8.9;
 
- pragma solidity 0.8.9;
- 
- 
- 
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
-
-
- contract tokenizacaoimobiliaria is ERC721URIStorage
-    {
-        
-        using Counters for Counters.Counter;
-        Counters.Counter private _tokenIds;
+contract tokenizacaoimobiliaria {
+    
         string nomecartorio;
         string nomecondominio;
         address incorporador;
-    //    address estado;
-        address comprador;
-
+        address estado;
         
         
-    function awardItem(address player, string memory tokenURI)
-        public
-        returns (uint256)
-    {
-        _tokenIds.increment();
-
-        uint256 newItemId = _tokenIds.current();
-        _mint(player, newItemId);
-        _setTokenURI(newItemId, tokenURI);
-
-        return newItemId;
-    }
-        
-        
-        
-        
-        
-        struct lote
-        {
-        uint numeromatricula;
-        uint numerocasa;
-        uint valordolote;
-        uint areaprivativa;
-        address proprietario;
-        bool disponivel;
-        bool negociavel;
+        struct lote {
+            
+            uint numeromatricula;
+            uint numerocasa;
+            uint valordolote;
+            uint areaprivativa;
+            address proprietario;
+            bool disponivel;
+            bool negociavel;
         }
         
-        mapping (uint => lote) public loteamento;
-        mapping (uint => bool) public numerodacasa;
+        mapping (uint => lote) public loteamento; // mapea uma lista chamado loetamento com número como chave e lote como valor
+        mapping (uint => bool) public numerodacasa; // mapea uma lista chamado numerdacasa com número como chave e bool como valor
         
         constructor 
         (
-            string memory _nomecartorio, 
-            string memory _nomecondominio
-      //      address _estado
+            string memory _nomecartorio, // obrigado preencher no deploy
+            string memory _nomecondominio, // obrigado preencher no deploy
+            address _estado // obrigado preencher no deploy
         )
-        
-        ERC721("GameItem", "ITM")
         {
                nomecartorio = _nomecartorio;
                nomecondominio = _nomecondominio;
-    //           estado = _estado;
-               incorporador = msg.sender;
-        }    
+               estado = _estado;
+               incorporador = msg.sender; // atribui a carteira do deployer ao incorporador
+        }
+
+        modifier imovelDiponivel {
+            require(loteamento[_numeromatricula].disponivel == true, "O imovel deve estar disponivel ");
+            require(loteamento[_numeromatricula].negociavel == true, "O imovel deve estar negociavel");
+            _;
+        }
         
-        function criarlote
-        (
+        
+        function criarlote (
             uint _numeromatricula,
             uint _numerocasa,
             uint _valordolote,
             uint _areaprivativa,
             address _primeiroproprietario,
-            bool _diponivel,
+            bool _disponivel,
             bool _negociavel
-    
             
-        ) public 
-        {
-            require(msg.sender == incorporador, "apenas o incorporador pode criar um lote");
-            require(loteamento[_numeromatricula].numeromatricula == 0, "matricula registrada");
+        ) public {
+            
+            require(msg.sender == incorporador, "somente o incorporador pode criar lotes");
+            require(loteamento[_numeromatricula].numeromatricula == 0, "matricula ja registrada"); // se o número da matricula for zero significa que ainda não há dados na memória
             require(numerodacasa[_numerocasa] == false, "casa ja existe");
             require(_valordolote > 0, "favor inserir um valor diferente de zero");
-            loteamento[_numeromatricula]= lote( _numeromatricula, _numerocasa, _valordolote, _areaprivativa, _primeiroproprietario, _diponivel, _negociavel);
             
-            
+            loteamento[_numeromatricula] = lote( _numeromatricula, _numerocasa, _valordolote, _areaprivativa, _primeiroproprietario, true, true);
         }
         
         
-        
-       function ComprarLote(uint _numeromatricula )  public payable returns (address , string memory) {
-        require(loteamento[_numeromatricula].disponivel == true, "O imovel deve estar disponivel ");
-        require(loteamento[_numeromatricula].negociavel == true, "O imovel deve estar negociavel");
-        require(msg.value == loteamento[_numeromatricula].valordolote, "O Valor do lote esta errado");
-        require (msg.sender != loteamento[_numeromatricula].proprietario, "o atual dono nao pode comprar o imovel");
-        payable(loteamento[_numeromatricula].proprietario).transfer(msg.value);
-        loteamento[_numeromatricula].proprietario = msg.sender;
-        loteamento[_numeromatricula].negociavel = false;
-        return(loteamento[_numeromatricula].proprietario, "O Novo proprietrio e a carteira");
-      }
-       
-       
-        function AlterarStatusImovel(uint _numeromatricula , uint _valordolote, bool _diponivel )  public  returns (uint, string memory) {
-        
-        require(msg.sender == loteamento[_numeromatricula].proprietario, "o status do imovel so pode ser alterado pelo proprietario do imovel");
-        require(_valordolote > 0, "O Valor do lote nao pode ser 0");
-        loteamento[_numeromatricula].valordolote = _valordolote;
-        loteamento[_numeromatricula].disponivel = _diponivel;
-
-        return(loteamento[_numeromatricula].valordolote, "esse e o novo valor do lote");
-      }
-       
-
-
-        function DoarPropriedade (uint _numeromatricula, address _novoProprietario) public returns (address, string memory) {
+        function ComprarLote(
+            uint _numeromatricula
             
+        ) public payable returns (address , string memory) {
             
-            require (msg.sender == loteamento[_numeromatricula].proprietario , "apenas o proprietario pode fazer a transferencia");
-            require (loteamento[_numeromatricula].disponivel, "o imovel deve estar disponivel" );
-            loteamento[_numeromatricula].proprietario = _novoProprietario;
-             return ( loteamento[_numeromatricula].proprietario , " voce doou o imovel para a carteira");
-            
-            
+            require(loteamento[_numeromatricula].disponivel == true, "O imovel deve estar disponivel ");
+            require(loteamento[_numeromatricula].negociavel == true, "O imovel deve estar negociavel");
+            require (msg.sender != loteamento[_numeromatricula].proprietario, "o atual dono nao pode comprar o imovel");
+            payable(loteamento[_numeromatricula].proprietario).transfer(msg.value); // valor da tx é transferido para o vendedor
+            loteamento[_numeromatricula].proprietario = msg.sender; // proprietário passa a ser o comprador
+            loteamento[_numeromatricula].negociavel = false; // lote ficará inegociável após
+            return(loteamento[_numeromatricula].proprietario, "O Novo proprietrio e a carteira");
         }
-       
-       
-       
-       
-       
-       
+
+
+
+        function  TransferirLote(
+            uint _numeromatricula,
+            address _novoproprietario,
+            bool _disponivel,
+            bool _negociavel
+
+        ) public payable {
+        
+            require(loteamento[_numeromatricula].proprietario == msg.sender); // só o atual propretário pode vender
+            //require(_novoproprietario == 
+            require(loteamento[_numeromatricula].disponivel == true, "O imovel deve estar disponivel ");
+            require(loteamento[_numeromatricula].negociavel == true, "O imovel deve estar negociavel");
+            loteamento[_numeromatricula].negociavel = false; // lote ficará inegociável após
+
+        
+        }
+     
+        
+        
+        
+        
         
         
     }
