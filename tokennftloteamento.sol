@@ -28,12 +28,12 @@ contract tokenizacaoimobiliaria {
         (
             string memory _nomecartorio, // obrigado preencher no deploy
             string memory _nomecondominio // obrigado preencher no deploy
-            //address _estado // obrigado preencher no deploy
+            address _estado // obrigado preencher no deploy
         )
         {
                nomecartorio = _nomecartorio;
                nomecondominio = _nomecondominio;
-               //estado = _estado;
+               estado = _estado;
                incorporador = msg.sender; // atribui a carteira do deployer ao incorporador
         }
 
